@@ -21,7 +21,7 @@ To install **SectorinsightRv2**, use the following command:
 
 ```r
 # Install SectorinsightRv2 from your local environment or GitHub
-devtools::install_github("YourGitHubUsername/SectorinsightRv2")
+devtools::install_github("maraqa1/SectorinsightRv2")
 ```
 Ensure that you have the required dependencies installed. Missing dependencies can be installed using the following command:
 
