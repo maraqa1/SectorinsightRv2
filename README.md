@@ -174,10 +174,7 @@ Save your DFM and KMeans models in .rds format:
 ```r
 # Save a DFM model
 saveRDS(dfm_model, file = "30_topic_dfm.rds")
-```
-
-#### Save a KMeans model
-```r
+# Save a KMeans model
 saveRDS(kmeans_model, file = "30_topic_kmeans.rds")
 ```
 Step 2: Place Models in the Correct Folders
