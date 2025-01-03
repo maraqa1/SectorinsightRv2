@@ -134,10 +134,153 @@ The package depends on the following R packages:
 ```r
 install.packages(c("dplyr", "ggplot2", "quanteda", "stringr", "DT", "future.apply"))
 ```
+
+## How to Add New Models to SectorinsightRv2
+This guide explains how to add new models (e.g., KMeans models for clustering or DFM models for feature extraction) to the SectorinsightRv2 package so they can be used for text analysis tasks.
+
+### Folder Structure for Models
+The models used by the package are stored in the following directory structure under the inst/extdata/ folder:
+
+``` graphql
+
+inst/extdata/
+├── models/
+│   ├── dfm/      # Stores the Document-Feature Matrix (DFM) models
+│   │   ├── 15_topic_dfm.rds
+│   │   ├── 23_topic_dfm.rds
+│   │   └── [new_dfm_model].rds
+│   ├── kmeans/   # Stores the KMeans clustering models
+│   │   ├── 15_topic_kmeans.rds
+│   │   ├── 23_topic_kmeans.rds
+│   │   └── [new_kmeans_model].rds
+```
+### Requirements for New Models
+For DFM Models:
+
+The model must be created using the quanteda::dfm() function or be compatible with quanteda objects.
+Ensure the feature names (columns) of the new DFM model are aligned with the feature names in the KMeans model. This ensures proper feature matching during predictions.
+
+For KMeans Models:
+The model must be created using the stats::kmeans() function.
+
+The KMeans object must include:
+  - centers: A matrix of cluster centers.
+  - labels: A named vector where cluster IDs (names) map to suggested cluster labels (values).
+Ensure cluster labels are meaningful and represent the topics covered by each cluster.
+Adding New Models to the Package
+Step 1: Save Your Models
+Save your DFM and KMeans models in .rds format:
+
+r
+Copy code
+# Save a DFM model
+saveRDS(dfm_model, file = "30_topic_dfm.rds")
+
+# Save a KMeans model
+saveRDS(kmeans_model, file = "30_topic_kmeans.rds")
+Step 2: Place Models in the Correct Folders
+Place the DFM model (30_topic_dfm.rds) in the inst/extdata/models/dfm/ folder.
+Place the KMeans model (30_topic_kmeans.rds) in the inst/extdata/models/kmeans/ folder.
+Adding Cluster Labels to KMeans Models
+Each KMeans model should have meaningful cluster labels for better interpretability. These labels should be stored in the labels attribute of the KMeans object. Here’s how to add or modify the labels:
+
+r
+Copy code
+# Assume `kmeans_model` is your KMeans object
+# Define cluster labels (adjust as needed for your model)
+cluster_labels <- c(
+  "Cluster 1: Renewable Energy and Wind Power",
+  "Cluster 2: Artificial Intelligence in Education",
+  "Cluster 3: Sustainable Agriculture"
+)
+
+# Add labels to the KMeans model
+kmeans_model$labels <- cluster_labels
+
+# Save the updated KMeans model
+saveRDS(kmeans_model, file = "new_kmeans_model.rds")
+Verifying the Models
+After adding your models to the correct folders, you can verify them using the following commands:
+
+r
+Copy code
+# List all available models
+SectorinsightRv2::list_models()
+
+# List all topics across all models
+SectorinsightRv2::list_all_topics()
+These commands will confirm that the new models are properly loaded and their topics are available.
+
+Example: Adding a New 30-Topic Model
+Here’s a complete example of how to add a 30-topic model:
+
+Prepare the Models
+
+Create the DFM model using quanteda:
+r
+Copy code
+dfm_model <- quanteda::dfm(corpus, tolower = TRUE, remove_punct = TRUE)
+saveRDS(dfm_model, file = "30_topic_dfm.rds")
+Train a KMeans model:
+r
+Copy code
+kmeans_model <- kmeans(quanteda::convert(dfm_model, to = "matrix"), centers = 30)
+kmeans_model$labels <- paste("Cluster", 1:30, ": Example Topic")  # Add labels
+saveRDS(kmeans_model, file = "30_topic_kmeans.rds")
+Move the Files
+
+Place 30_topic_dfm.rds in inst/extdata/models/dfm/.
+Place 30_topic_kmeans.rds in inst/extdata/models/kmeans/.
+Verify the Models
+
+r
+Copy code
+SectorinsightRv2::list_models()
+SectorinsightRv2::list_all_topics()
+Use the New Models
+
+To load the model manually:
+r
+Copy code
+SectorinsightRv2::load_model(30)  # Assuming 30 is the number for the new model
+To analyze text:
+r
+Copy code
+result <- SectorinsightRv2::predict_top_n_clusters(
+  text = "This project focuses on AI and renewable energy.",
+  n = 2
+)
+print(result)
+Notes on Compatibility
+Ensure the DFM and KMeans models are compatible (e.g., have matching feature names).
+Always add meaningful cluster labels to improve interpretability.
+For large models, consider optimizing storage (e.g., using sparse matrices).
+FAQs
+How can I confirm if my new model is loaded?
+Use the following commands:
+
+r
+Copy code
+SectorinsightRv2::list_models()       # Lists all available models
+SectorinsightRv2::list_all_topics()   # Lists topics across all models
+What if my new model doesn't appear in the list?
+Ensure the .rds files are in the correct folders (dfm/ or kmeans/).
+Verify that the models are properly saved and compatible with SectorinsightRv2.
+How can I remove or replace an existing model?
+Simply replace or delete the .rds files in the corresponding inst/extdata/models/ folder.
+
+
+
+
+
 Known Issues
 Model Loading Errors: Ensure the package is correctly installed and the pre-trained models are available in the expected directory (inst/extdata/models).
 Batch Processing: Ensure the input CSV file has a text_column containing the texts to be analyzed.
 Startup Messages: Suppress package initialization messages using suppressMessages().
+
+
+
+
 Contributing
 Contributions are welcome! Please follow these steps:
 
