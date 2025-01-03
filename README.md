@@ -222,10 +222,8 @@ Create the DFM model using quanteda:
 dfm_model <- quanteda::dfm(corpus, tolower = TRUE, remove_punct = TRUE)
 saveRDS(dfm_model, file = "30_topic_dfm.rds")
 ```
-
 Train a KMeans model:
 ```r
-
 kmeans_model <- kmeans(quanteda::convert(dfm_model, to = "matrix"), centers = 30)
 kmeans_model$labels <- paste("Cluster", 1:30, ": Example Topic")  # Add labels
 saveRDS(kmeans_model, file = "30_topic_kmeans.rds")
@@ -233,18 +231,18 @@ saveRDS(kmeans_model, file = "30_topic_kmeans.rds")
 
 ### Move the Files
 
-Place 30_topic_dfm.rds in inst/extdata/models/dfm/.
-Place 30_topic_kmeans.rds in inst/extdata/models/kmeans/.
-Verify the Models
+  - Place 30_topic_dfm.rds in inst/extdata/models/dfm/.
 
+  - Place 30_topic_kmeans.rds in inst/extdata/models/kmeans/.
+
+Verify the Models
 ```r
 SectorinsightRv2::list_models()
 SectorinsightRv2::list_all_topics()
 ```
-
 Use the New Models
 
-To load the model manually:
+### To load the model manually:
 ```r
 SectorinsightRv2::load_model(30)  # Assuming 30 is the number for the new model
 To analyze text:
