@@ -79,14 +79,14 @@ result <- SectorinsightRv2::predict_by_topic(
 )
 print(result)
 ```
-### Shiny App Integration
+## Shiny App Integration
 The package can be integrated with an advanced Shiny App for interactive NLP analysis. The app provides:
 
 - **Model Selection**: Choose models (15-topic, 23-topic) or load models by topic.
 - **Single Text Analysis**: Input text and analyze the predicted topics visually.
 - **Batch Analysis**: Upload a CSV file with text data for batch processing.
 
-Running the Shiny App
+### Running the Shiny App
 Use the following command to launch the app:
 
 ```r
@@ -96,20 +96,20 @@ runApp(system.file("shiny_app", package = "SectorinsightRv2"))
 Example Workflow
 Single Text Analysis
 ```r
-# Load the model
+## Load the model
 SectorinsightRv2::load_model(15)
 
-# Perform single text analysis
+### Perform single text analysis
 text <- "AI-powered systems are transforming urban planning and development."
 result <- SectorinsightRv2::predict_top_n_clusters(texts = text, n = 3)
 print(result)
 ```
 Batch File Analysis
 ```r
-# Load the model
+## Load the model
 SectorinsightRv2::load_model(23)
 
-# Perform batch analysis
+## Perform batch analysis
 texts <- c(
   "AI and data science are revolutionizing industries.",
   "Renewable energy systems are critical for sustainability.",
@@ -155,37 +155,38 @@ inst/extdata/
 │   │   └── [new_kmeans_model].rds
 ```
 ### Requirements for New Models
-For DFM Models:
-
+1. For DFM Models:
 The model must be created using the quanteda::dfm() function or be compatible with quanteda objects.
 Ensure the feature names (columns) of the new DFM model are aligned with the feature names in the KMeans model. This ensures proper feature matching during predictions.
 
-For KMeans Models:
+2. For KMeans Models:
 The model must be created using the stats::kmeans() function.
 
 The KMeans object must include:
   - centers: A matrix of cluster centers.
   - labels: A named vector where cluster IDs (names) map to suggested cluster labels (values).
 Ensure cluster labels are meaningful and represent the topics covered by each cluster.
-Adding New Models to the Package
+### Adding New Models to the Package
+
 Step 1: Save Your Models
 Save your DFM and KMeans models in .rds format:
 
-r
-Copy code
+```r
 # Save a DFM model
 saveRDS(dfm_model, file = "30_topic_dfm.rds")
+```
 
-# Save a KMeans model
+#### Save a KMeans model
+```r
 saveRDS(kmeans_model, file = "30_topic_kmeans.rds")
+```
 Step 2: Place Models in the Correct Folders
-Place the DFM model (30_topic_dfm.rds) in the inst/extdata/models/dfm/ folder.
-Place the KMeans model (30_topic_kmeans.rds) in the inst/extdata/models/kmeans/ folder.
+  - Place the DFM model (30_topic_dfm.rds) in the inst/extdata/models/dfm/ folder.
+  - Place the KMeans model (30_topic_kmeans.rds) in the inst/extdata/models/kmeans/ folder.
 Adding Cluster Labels to KMeans Models
-Each KMeans model should have meaningful cluster labels for better interpretability. These labels should be stored in the labels attribute of the KMeans object. Here’s how to add or modify the labels:
+  Each KMeans model should have meaningful cluster labels for better interpretability. These labels should be stored in the labels attribute of the KMeans object. Here’s how to add or modify the labels:
 
-r
-Copy code
+```r
 # Assume `kmeans_model` is your KMeans object
 # Define cluster labels (adjust as needed for your model)
 cluster_labels <- c(
@@ -199,78 +200,86 @@ kmeans_model$labels <- cluster_labels
 
 # Save the updated KMeans model
 saveRDS(kmeans_model, file = "new_kmeans_model.rds")
+```
+
 Verifying the Models
 After adding your models to the correct folders, you can verify them using the following commands:
 
-r
-Copy code
+```r
 # List all available models
 SectorinsightRv2::list_models()
 
 # List all topics across all models
 SectorinsightRv2::list_all_topics()
+```
 These commands will confirm that the new models are properly loaded and their topics are available.
 
 Example: Adding a New 30-Topic Model
 Here’s a complete example of how to add a 30-topic model:
 
-Prepare the Models
+#### Prepare the Models
 
 Create the DFM model using quanteda:
-r
-Copy code
+```r
+
 dfm_model <- quanteda::dfm(corpus, tolower = TRUE, remove_punct = TRUE)
 saveRDS(dfm_model, file = "30_topic_dfm.rds")
+```
+
 Train a KMeans model:
-r
-Copy code
+```r
+
 kmeans_model <- kmeans(quanteda::convert(dfm_model, to = "matrix"), centers = 30)
 kmeans_model$labels <- paste("Cluster", 1:30, ": Example Topic")  # Add labels
 saveRDS(kmeans_model, file = "30_topic_kmeans.rds")
-Move the Files
+```
+
+### Move the Files
 
 Place 30_topic_dfm.rds in inst/extdata/models/dfm/.
 Place 30_topic_kmeans.rds in inst/extdata/models/kmeans/.
 Verify the Models
 
-r
-Copy code
+```r
 SectorinsightRv2::list_models()
 SectorinsightRv2::list_all_topics()
+```
+
 Use the New Models
 
 To load the model manually:
-r
-Copy code
+```r
 SectorinsightRv2::load_model(30)  # Assuming 30 is the number for the new model
 To analyze text:
-r
-Copy code
+```r
+
 result <- SectorinsightRv2::predict_top_n_clusters(
   text = "This project focuses on AI and renewable energy.",
   n = 2
 )
 print(result)
-Notes on Compatibility
+```
+
+## Notes on Compatibility
 Ensure the DFM and KMeans models are compatible (e.g., have matching feature names).
 Always add meaningful cluster labels to improve interpretability.
 For large models, consider optimizing storage (e.g., using sparse matrices).
+
 FAQs
+
 How can I confirm if my new model is loaded?
 Use the following commands:
 
-r
-Copy code
+```r
 SectorinsightRv2::list_models()       # Lists all available models
 SectorinsightRv2::list_all_topics()   # Lists topics across all models
+```
+
 What if my new model doesn't appear in the list?
 Ensure the .rds files are in the correct folders (dfm/ or kmeans/).
 Verify that the models are properly saved and compatible with SectorinsightRv2.
 How can I remove or replace an existing model?
-Simply replace or delete the .rds files in the corresponding inst/extdata/models/ folder.
-
-
-
+Simply replace or delete the .rds files in the corresponding inst/extdata/models/ folder
 
 
 Known Issues
