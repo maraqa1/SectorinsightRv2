@@ -10,6 +10,8 @@
 list_all_topics <- function(pkgname = utils::packageName()) {
   # Get all models
   model_metadata <- list_models(pkgname = pkgname)
+  #model_metadata <- list_models(pkgname="SectorinsightRv2")
+  #print(model_metadata)
 
   # Initialize a list for topics
   all_topics <- list()
@@ -22,7 +24,14 @@ list_all_topics <- function(pkgname = utils::packageName()) {
     # Load the KMeans model
     kmeans_model <- tryCatch(readRDS(model_file), error = function(e) NULL)
     if (!is.null(kmeans_model) && !is.null(kmeans_model$labels)) {
-      cluster_labels <- unname(kmeans_model$labels)
+      #cluster_labels <- unname(kmeans_model$labels)
+      cluster_labels <- unique(unlist(kmeans_model$labels))
+
+      # Clean escaped quotes (if any)
+      cluster_labels <- gsub("^\"|\"$", "", cluster_labels)
+
+
+
       topics_df <- data.frame(
         Model = model_name,
         Topic = cluster_labels,

@@ -1,10 +1,13 @@
 #' Find Topics Across Models
 #'
-#' @param topic_keyword A keyword to search for in cluster labels.
-#' @param verbose Logical. If TRUE, prints debug information. Default is FALSE.
-#' @param pkgname The name of the package. Default is the current package name.
+#' Searches all available models for a specific topic keyword in the cluster labels.
 #'
-#' @return A list of models containing the topic of interest.
+#' @param topic_keyword A keyword to search for in cluster labels (case-insensitive).
+#' @param pkgname The name of the package. Default is the current package name.
+#' @param verbose Logical. If TRUE, prints debug information. Default is FALSE.
+#'
+#' @return A list of models containing the topic of interest, where each list element
+#' is a data frame of clusters and their labels.
 #'
 #' @examples
 #' \dontrun{
@@ -16,7 +19,7 @@ find_topic <- function(topic_keyword, pkgname = utils::packageName(), verbose = 
   # Get the directory containing KMeans models
   kmeans_dir <- system.file("extdata/models/kmeans", package = pkgname)
   model_files <- list.files(kmeans_dir, pattern = "\\.rds$", full.names = TRUE)
-  matches <- list()
+  matches <- list()  # Initialize a list to store matching models
 
   if (verbose) {
     message("DEBUG: Searching for topic '", topic_keyword, "' across models...")
@@ -29,24 +32,25 @@ find_topic <- function(topic_keyword, pkgname = utils::packageName(), verbose = 
       message("DEBUG: Checking file: ", basename(model_file))
     }
 
-    # Load the KMeans model
+    # Load the KMeans model safely
     kmeans_model <- tryCatch(readRDS(model_file), error = function(e) {
       warning("Failed to read model file: ", basename(model_file), " - Skipping.")
       return(NULL)
     })
 
-    # Skip if the model could not be loaded
+    # Skip to the next model if the current model could not be loaded
     if (is.null(kmeans_model)) {
       next
     }
 
     # Check for cluster labels
     if (!is.null(kmeans_model$labels)) {
-      # Handle cases where names are NULL or mismatched
-      if (is.null(names(kmeans_model$labels)) || length(names(kmeans_model$labels)) != length(kmeans_model$labels)) {
-        cluster_ids <- seq_along(kmeans_model$labels)  # Generate sequential IDs
+      # Generate sequential cluster IDs if names are missing or mismatched
+      cluster_ids <- if (is.null(names(kmeans_model$labels)) ||
+                         length(names(kmeans_model$labels)) != length(kmeans_model$labels)) {
+        seq_along(kmeans_model$labels)
       } else {
-        cluster_ids <- as.numeric(names(kmeans_model$labels))
+        as.numeric(names(kmeans_model$labels))
       }
 
       # Create a data frame of cluster IDs and labels
@@ -56,7 +60,7 @@ find_topic <- function(topic_keyword, pkgname = utils::packageName(), verbose = 
         stringsAsFactors = FALSE
       )
 
-      # Filter clusters that match the topic keyword
+      # Filter clusters that match the topic keyword (case-insensitive search)
       matching_clusters <- cluster_labels[grepl(topic_keyword, cluster_labels$Suggested_Label, ignore.case = TRUE), ]
 
       # If matches are found, add to results
@@ -75,7 +79,7 @@ find_topic <- function(topic_keyword, pkgname = utils::packageName(), verbose = 
     }
   }
 
-  # Return results or a message if no matches found
+  # Return results or a message if no matches are found
   if (length(matches) == 0) {
     if (verbose) {
       message("No models contain the topic: ", topic_keyword)
@@ -85,4 +89,3 @@ find_topic <- function(topic_keyword, pkgname = utils::packageName(), verbose = 
     return(matches)
   }
 }
-

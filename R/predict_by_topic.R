@@ -1,44 +1,79 @@
-#' Predict Based on a Topic of Interest
+#' Find Topics Across Models
 #'
-#' Selects and loads a pre-trained model containing the specified topic of interest,
-#' then makes predictions for the provided text using the selected model.
+#' Searches for a specific topic keyword across all models in the package. The function allows either
+#' exact matching or approximate (fuzzy) matching of topic names and returns a list of models containing
+#' the matching topics.
 #'
-#' @param text A character string containing the text to classify.
-#' @param topic_keyword A character string specifying the topic of interest (e.g., "Cybersecurity").
-#' @param pkgname The package name (default is the current package name).
-#' @param verbose A logical value indicating whether to print diagnostic messages. Default is `TRUE`.
+#' @param topic_keyword A character string specifying the topic keyword to search for in cluster labels.
+#' @param fuzzy Logical. If TRUE, performs approximate (fuzzy) matching using \code{agrepl}. If FALSE, performs
+#'   exact matching using \code{grepl}. Default is FALSE.
+#' @param verbose Logical. If TRUE, prints debug information about the matching process. Default is FALSE.
+#' @param pkgname A character string specifying the name of the package. Default is the name of the current package.
 #'
-#' @return A data frame containing:
-#' - The input text.
-#' - The predicted cluster ID.
-#' - The suggested label for the predicted cluster.
+#' @return A list where each element corresponds to a model containing matching topics. Each element is a data frame
+#'   of matching clusters with columns:
+#'   \describe{
+#'     \item{\code{Cluster}}{Cluster ID within the model.}
+#'     \item{\code{Suggested_Label}}{Cluster label containing the matched topic keyword.}
+#'   }
+#'   If no matches are found, returns \code{NULL}.
 #'
 #' @examples
 #' \dontrun{
-#' # Predict the sector for a cybersecurity-related text
-#' predict_by_topic("This is about cybersecurity advancements.", "Cybersecurity")
+#' # Example 1: Find topics using exact matching
+#' exact_matches <- find_topic("Hydrogen Energy and Renewable Fuels", fuzzy = FALSE, verbose = TRUE)
+#'
+#' # Example 2: Find topics using fuzzy matching
+#' fuzzy_matches <- find_topic("Renewable Energy", fuzzy = TRUE, verbose = TRUE)
+#'
+#' # Example 3: Check all matching models and topics
+#' if (!is.null(fuzzy_matches)) {
+#'   print(fuzzy_matches)
+#' }
 #' }
 #'
 #' @export
+find_topic <- function(topic_keyword, fuzzy = FALSE, verbose = FALSE, pkgname = utils::packageName()) {
+  # Fetch all available topics from the models
+  topics_df <- SectorinsightRv2::list_all_topics()
 
-predict_by_topic <- function(text, topic_keyword, pkgname = utils::packageName(), verbose = TRUE) {
-  matches <- find_topic(topic_keyword, pkgname)
-
-  cat("Matching models:\n")
-  for (model_name in names(matches)) {
-    cat("Model:", model_name, "\n")
-    print(matches[[model_name]])
-    cat("\n")
+  if (nrow(topics_df) == 0) {
+    stop("No topics found across available models.")
   }
 
-  model_index <- as.integer(readline(prompt = "Enter the index of the model to use: "))
-  if (is.na(model_index) || model_index < 1 || model_index > length(matches)) {
-    stop("Invalid selection.")
+  # Perform matching based on the `fuzzy` argument
+  if (fuzzy) {
+    # Fuzzy matching using `agrepl` (allows approximate matches)
+    matched_topics <- topics_df[agrepl(topic_keyword, topics_df$Topic, ignore.case = TRUE), ]
+  } else {
+    # Exact matching using `grepl` (case-insensitive)
+    matched_topics <- topics_df[grepl(topic_keyword, topics_df$Topic, ignore.case = TRUE), ]
   }
 
-  selected_model_file <- names(matches)[model_index]
-  topics <- as.numeric(strsplit(selected_model_file, "_")[[1]][1])
-  load_model(topics, pkgname)
+  if (verbose) {
+    message("DEBUG: Searching for topic '", topic_keyword, "'")
+    if (fuzzy) {
+      message("DEBUG: Fuzzy matching enabled.")
+    } else {
+      message("DEBUG: Exact matching enabled.")
+    }
+    message("DEBUG: Total matches found: ", nrow(matched_topics))
+  }
 
-  return(predict_sector(text, verbose = verbose))
+  # If no matches found, return NULL
+  if (nrow(matched_topics) == 0) {
+    warning("No models found for the specified topic: ", topic_keyword)
+    return(NULL)
+  }
+
+  # Group matches by model name
+  matches <- split(matched_topics, matched_topics$Model)
+
+  if (verbose) {
+    message("DEBUG: Matched models and topics:\n")
+    print(matches)
+  }
+
+  return(matches)
 }
+
